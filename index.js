@@ -25,7 +25,7 @@ app.get("/airquality", (req, res) => {
       } else {
         // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
-          item.timestamp = moment(item.timestamp).format("YYYY-MM-DD HH:mm:ss");
+          item.timestamp = moment(item.timestamp).format("HH:mm DD-MM-YYYY");
         });
         res.send(results);
       }
@@ -48,7 +48,7 @@ app.get("/airquality/:device_id", (req, res) => {
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp)
             // .tz("Asia/Bangkok")
-            .format("YYYY-MM-DD HH:mm:ss");
+            .format("HH:mm DD-MM-YYYY");
         });
         res.send(results);
       }
