@@ -4,6 +4,7 @@ const mysql = require("mysql2");
 require("dotenv").config();
 const app = express();
 const moment = require("moment-timezone");
+const bcrypt = require("bcryptjs");
 
 app.use(cors());
 app.use(express.json());
@@ -78,13 +79,197 @@ app.post("/airquality", (req, res) => {
         console.error("Error inserting data:", err);
         res.status(500).send("Error adding data");
       } else {
-        res
-          .status(200)
-          .send({
-            message: "Data inserted successfully",
-            id: results.insertId,
-          });
+        res.status(200).send({
+          message: "Data inserted successfully",
+          id: results.insertId,
+        });
       }
+    }
+  );
+});
+
+//User
+// สมัครบัญชี (เข้ารหัสรหัสผ่านก่อนบันทึก)
+app.post("/users", async (req, res) => {
+  const { fname, lname, email, password, avatar } = req.body;
+
+  if (!fname || !lname || !email || !password) {
+    return res.status(400).send("Missing required fields");
+  }
+
+  // เข้ารหัสรหัสผ่าน
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  connection.query(
+    "INSERT INTO Users (fname, lname, email, password, avatar) VALUES (?, ?, ?, ?, ?)",
+    [fname, lname, email, hashedPassword, avatar || ""],
+    function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error adding user");
+      }
+      res
+        .status(201)
+        .send({ message: "User created successfully", id: results.insertId });
+    }
+  );
+});
+
+// ล็อกอิน (ตรวจสอบรหัสผ่าน)
+app.post("/users/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send("Missing required fields");
+  }
+
+  connection.query(
+    "SELECT * FROM Users WHERE email = ?",
+    [email],
+    async function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error fetching user");
+      }
+
+      if (results.length === 0) {
+        return res.status(404).send("User not found");
+      }
+
+      const user = results[0];
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        return res.status(401).send("Incorrect password");
+      }
+
+      res.send({ message: "Login successful", user });
+    }
+  );
+});
+
+// เปลี่ยนรหัสผ่าน (ต้องใช้รหัสเก่า)
+app.put("/users/change-password/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).send("Missing required fields");
+  }
+
+  connection.query(
+    "SELECT password FROM Users WHERE id = ?",
+    [userId],
+    async function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error fetching user");
+      }
+
+      if (results.length === 0) {
+        return res.status(404).send("User not found");
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, results[0].password);
+
+      if (!isMatch) {
+        return res.status(401).send("Incorrect old password");
+      }
+
+      const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+      connection.query(
+        "UPDATE Users SET password = ? WHERE id = ?",
+        [newHashedPassword, userId],
+        function (err) {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Error updating password");
+          }
+          res.send({ message: "Password changed successfully" });
+        }
+      );
+    }
+  );
+});
+
+// รีเซ็ตรหัสผ่าน (ตั้งรหัสใหม่ผ่านอีเมล)
+app.put("/users/reset-password", async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).send("Missing required fields");
+  }
+
+  const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+  connection.query(
+    "UPDATE Users SET password = ? WHERE email = ?",
+    [newHashedPassword, email],
+    function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error resetting password");
+      }
+      res.send({ message: "Password reset successfully" });
+    }
+  );
+});
+
+// ดึงข้อมูลผู้ใช้ทั้งหมด
+app.get("/users", (req, res) => {
+  connection.query(
+    "SELECT id, fname, lname, email, avatar FROM Users",
+    function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error fetching users");
+      }
+      res.send(results);
+    }
+  );
+});
+
+// ดึงข้อมูลผู้ใช้เฉพาะ ID
+app.get("/users/:id", (req, res) => {
+  const userId = req.params.id;
+
+  connection.query(
+    "SELECT id, fname, lname, email, avatar FROM Users WHERE id = ?",
+    [userId],
+    function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error fetching user");
+      }
+
+      if (results.length === 0) {
+        return res.status(404).send("User not found");
+      }
+
+      res.send(results[0]);
+    }
+  );
+});
+
+// ลบผู้ใช้
+app.delete("/users/:id", (req, res) => {
+  const userId = req.params.id;
+
+  connection.query(
+    "DELETE FROM Users WHERE id = ?",
+    [userId],
+    function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error deleting user");
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send("User not found");
+      }
+
+      res.send({ message: "User deleted successfully" });
     }
   );
 });
