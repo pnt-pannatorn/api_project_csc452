@@ -26,7 +26,6 @@ app.get("/airquality", (req, res) => {
         // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp)
-            .tz("Asia/Bangkok")
             .format("YYYY-MM-DD HH:mm:ss");
         });
         res.send(results);
