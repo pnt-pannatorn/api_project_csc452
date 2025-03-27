@@ -34,7 +34,7 @@ app.get("/airquality", (req, res) => {
 });
 
 // Route: GET ข้อมูลเฉพาะ Device ID
-app.get("/airquality/:device_id", (req, res) => {
+app.get("/airquality/history/:device_id", (req, res) => {
   const deviceId = req.params.device_id;
   connection.query(
     "SELECT * FROM AirQualityData WHERE device_id = ? ORDER BY timestamp DESC",
