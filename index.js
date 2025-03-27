@@ -96,7 +96,7 @@ app.get("/airquality/history", (req, res) => {
       } else {
         // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
-          item.timestamp = moment(item.timestamp).format("HH:mm DD-MM-YYYY");
+          item.timestamp = moment(item.timestamp).format("YYYY-MM-DD HH:mm:ss");
         });
         res.send(results);
       }
