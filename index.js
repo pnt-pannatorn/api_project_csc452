@@ -104,37 +104,6 @@ app.get("/airquality/history", (req, res) => {
   );
 });
 
-// app.get("/airquality/history", (req, res) => {
-//   const { date, device_id, start_time, end_time } = req.query;
-
-//   let query = "SELECT * FROM AirQualityData WHERE 1=1";
-//   let params = [];
-
-//   if (date) {
-//     query += " AND DATE(timestamp) = ?";
-//     params.push(date);
-//   }
-//   if (device_id) {
-//     query += " AND device_id = ?";
-//     params.push(device_id);
-//   }
-//   if (start_time && end_time) {
-//     query += " AND TIME(timestamp) BETWEEN ? AND ?";
-//     params.push(start_time, end_time);
-//   }
-
-//   query += " ORDER BY timestamp DESC";
-
-//   connection.query(query, params, (err, results) => {
-//     if (err) {
-//       console.error(err);
-//       res.status(500).send("Error fetching history data");
-//     } else {
-//       res.send(results);
-//     }
-//   });
-// });
-
 //User
 // สมัครบัญชี (เข้ารหัสรหัสผ่านก่อนบันทึก)
 app.post("/users", async (req, res) => {
