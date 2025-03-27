@@ -89,15 +89,16 @@ app.post("/airquality", (req, res) => {
 app.get("/airquality/history", (req, res) => {
   connection.query(
     "SELECT * FROM AirQualityData ORDER BY timestamp DESC",
-    function (err, results) {
+    function (err, results, fields) {
       if (err) {
         console.error(err);
-        res.status(500).send("Error fetching history data");
+        res.status(500).send("Error fetching data");
       } else {
+        // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp).format("HH:mm DD-MM-YYYY");
         });
-        res.json(results);
+        res.send(results);
       }
     }
   );
