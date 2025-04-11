@@ -4,7 +4,7 @@ const mysql = require("mysql2");
 require("dotenv").config();
 const app = express();
 const moment = require("moment-timezone");
-const bcrypt = require("bcryptjs");
+// const bcrypt = require("bcryptjs");
 
 app.use(cors());
 app.use(express.json());
@@ -44,10 +44,9 @@ app.get("/airquality/history/:device_id", (req, res) => {
         console.error(err);
         res.status(500).send("Error fetching device data");
       } else {
-        // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp)
-            // .tz("Asia/Bangkok")
+
             .format("HH:mm DD-MM-YYYY");
         });
         res.send(results);
@@ -105,20 +104,17 @@ app.get("/airquality/history", (req, res) => {
 });
 
 //User
-// สมัครบัญชี (เข้ารหัสรหัสผ่านก่อนบันทึก)
-app.post("/users", async (req, res) => {
+// สมัครบัญชี (บันทึกรหัสผ่านโดยไม่เข้ารหัส)
+app.post("/users", (req, res) => {
   const { fname, lname, email, password, avatar } = req.body;
 
   if (!fname || !lname || !email || !password) {
     return res.status(400).send("Missing required fields");
   }
 
-  // เข้ารหัสรหัสผ่าน
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   connection.query(
     "INSERT INTO Users (fname, lname, email, password, avatar) VALUES (?, ?, ?, ?, ?)",
-    [fname, lname, email, hashedPassword, avatar || ""],
+    [fname, lname, email, password, avatar || ""],
     function (err, results) {
       if (err) {
         console.error(err);
@@ -131,8 +127,8 @@ app.post("/users", async (req, res) => {
   );
 });
 
-// ล็อกอิน (ตรวจสอบรหัสผ่าน)
-app.post("/users/login", async (req, res) => {
+// ล็อกอิน (ตรวจสอบรหัสผ่านโดยตรง)
+app.post("/users/login", (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -142,7 +138,7 @@ app.post("/users/login", async (req, res) => {
   connection.query(
     "SELECT * FROM Users WHERE email = ?",
     [email],
-    async function (err, results) {
+    function (err, results) {
       if (err) {
         console.error(err);
         return res.status(500).send("Error fetching user");
@@ -153,9 +149,8 @@ app.post("/users/login", async (req, res) => {
       }
 
       const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.password);
 
-      if (!isMatch) {
+      if (password !== user.password) {
         return res.status(401).send("Incorrect password");
       }
 
@@ -165,7 +160,7 @@ app.post("/users/login", async (req, res) => {
 });
 
 // เปลี่ยนรหัสผ่าน (ต้องใช้รหัสเก่า)
-app.put("/users/change-password/:id", async (req, res) => {
+app.put("/users/change-password/:id", (req, res) => {
   const userId = req.params.id;
   const { oldPassword, newPassword } = req.body;
 
@@ -176,7 +171,7 @@ app.put("/users/change-password/:id", async (req, res) => {
   connection.query(
     "SELECT password FROM Users WHERE id = ?",
     [userId],
-    async function (err, results) {
+    function (err, results) {
       if (err) {
         console.error(err);
         return res.status(500).send("Error fetching user");
@@ -186,17 +181,13 @@ app.put("/users/change-password/:id", async (req, res) => {
         return res.status(404).send("User not found");
       }
 
-      const isMatch = await bcrypt.compare(oldPassword, results[0].password);
-
-      if (!isMatch) {
+      if (oldPassword !== results[0].password) {
         return res.status(401).send("Incorrect old password");
       }
 
-      const newHashedPassword = await bcrypt.hash(newPassword, 10);
-
       connection.query(
         "UPDATE Users SET password = ? WHERE id = ?",
-        [newHashedPassword, userId],
+        [newPassword, userId],
         function (err) {
           if (err) {
             console.error(err);
@@ -210,18 +201,16 @@ app.put("/users/change-password/:id", async (req, res) => {
 });
 
 // รีเซ็ตรหัสผ่าน (ตั้งรหัสใหม่ผ่านอีเมล)
-app.put("/users/reset-password", async (req, res) => {
+app.put("/users/reset-password", (req, res) => {
   const { email, newPassword } = req.body;
 
   if (!email || !newPassword) {
     return res.status(400).send("Missing required fields");
   }
 
-  const newHashedPassword = await bcrypt.hash(newPassword, 10);
-
   connection.query(
     "UPDATE Users SET password = ? WHERE email = ?",
-    [newHashedPassword, email],
+    [newPassword, email],
     function (err) {
       if (err) {
         console.error(err);
