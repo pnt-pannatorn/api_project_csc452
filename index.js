@@ -108,7 +108,7 @@ app.get("/airquality/history", (req, res) => {
 app.post("/users", (req, res) => {
   const { fname, lname, email, password, avatar } = req.body;
 
-  if (!fname || !lname || !email || !password) {
+  if (!fname || !lname || !email || !password || !avatar) {
     return res.status(400).send("Missing required fields");
   }
 
