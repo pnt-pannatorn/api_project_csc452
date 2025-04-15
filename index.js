@@ -114,7 +114,7 @@ app.post("/users", (req, res) => {
 
   connection.query(
     "INSERT INTO Users (fname, lname, email, password, avatar) VALUES (?, ?, ?, ?, ?)",
-    [fname, lname, email, password, avatar || ""],
+    [fname, lname, email, password, avatar],
     function (err, results) {
       if (err) {
         console.error(err);
