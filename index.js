@@ -45,9 +45,7 @@ app.get("/airquality/history/:device_id", (req, res) => {
         res.status(500).send("Error fetching device data");
       } else {
         results.forEach((item) => {
-          item.timestamp = moment(item.timestamp)
-
-            .format("HH:mm DD-MM-YYYY");
+          item.timestamp = moment(item.timestamp).format("HH:mm DD-MM-YYYY");
         });
         res.send(results);
       }
@@ -104,7 +102,7 @@ app.get("/airquality/history", (req, res) => {
 });
 
 //User
-// สมัครบัญชี (บันทึกรหัสผ่านโดยไม่เข้ารหัส)
+//sign up
 app.post("/users", (req, res) => {
   const { fname, lname, email, password, avatar } = req.body;
 
@@ -127,7 +125,7 @@ app.post("/users", (req, res) => {
   );
 });
 
-// ล็อกอิน (ตรวจสอบรหัสผ่านโดยตรง)
+// ล็อกอิน
 app.post("/users/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -158,7 +156,29 @@ app.post("/users/login", (req, res) => {
     }
   );
 });
+//update
+app.put("/users/update", (req, res) => {
+  const { id, fname, lname, email, password } = req.body;
 
+  if (!id || !fname || !lname || !email || !password) {
+    return res.status(400).send("Missing required fields");
+  }
+
+  connection.query(
+    "UPDATE Users SET fname = ?, lname = ?, email = ?, password = ? WHERE id = ?",
+    [fname, lname, email, password, id],
+    function (err, results) {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error updating user");
+      }
+      if (results.affectedRows === 0) {
+        return res.status(404).send("User not found");
+      }
+      res.status(200).send({ message: "User updated successfully" });
+    }
+  );
+});
 // เปลี่ยนรหัสผ่าน (ต้องใช้รหัสเก่า)
 app.put("/users/change-password/:id", (req, res) => {
   const userId = req.params.id;
