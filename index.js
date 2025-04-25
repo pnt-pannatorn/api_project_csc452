@@ -23,7 +23,6 @@ app.get("/airquality", (req, res) => {
         console.error(err);
         res.status(500).send("Error fetching data");
       } else {
-        // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp).format("HH:mm DD-MM-YYYY");
         });
@@ -33,7 +32,7 @@ app.get("/airquality", (req, res) => {
   );
 });
 
-// Route: GET ข้อมูลเฉพาะ Device ID
+//ข้อมูลเฉพาะ Device ID
 app.get("/airquality/history/:device_id", (req, res) => {
   const deviceId = req.params.device_id;
   connection.query(
@@ -53,7 +52,7 @@ app.get("/airquality/history/:device_id", (req, res) => {
   );
 });
 
-// Route: POST ข้อมูลจาก IoT
+//POST ข้อมูลจาก IoT
 app.post("/airquality", (req, res) => {
   const { device_id, timestamp, temperature, humidity, pm2_5 } = req.body;
 
@@ -61,7 +60,6 @@ app.post("/airquality", (req, res) => {
     return res.status(400).send("Missing required fields");
   }
 
-  // แปลงเวลาเป็นเวลาท้องถิ่น (UTC+7 สำหรับไทย)
   const localTime = moment(timestamp)
     .tz("Asia/Bangkok")
     .format("YYYY-MM-DD HH:mm:ss");
@@ -91,7 +89,6 @@ app.get("/airquality/history", (req, res) => {
         console.error(err);
         res.status(500).send("Error fetching data");
       } else {
-        // แปลงเวลาในแต่ละ row เป็นเวลาท้องถิ่น (UTC+7)
         results.forEach((item) => {
           item.timestamp = moment(item.timestamp).format("YYYY-MM-DD HH:mm:ss");
         });
